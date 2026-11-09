@@ -1,0 +1,1 @@
+{"hooks":[{"action":{"command":"node .kiro/hooks/scripts/lint-saved.js","type":"command"},"description":"Syntax-check a saved JS file with node --check so broken code is caught immediately.","matcher":"\\.js$","name":"Lint JS on save","timeout":30,"trigger":"PostFileSave"}","version":"v1"}

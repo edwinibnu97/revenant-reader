@@ -1,0 +1,27 @@
+# Tasks — reader-ui spec
+
+- [x] 1. Page structure (`public/index.html`)
+  - [x] 1.1 Top bar: brand, tagline, search input, refresh button
+  - [x] 1.2 Sidebar: feed list, add-feed form, local-first hint
+  - [x] 1.3 Reader pane: title, meta, status line, item list
+  - [x] 1.4 Footer with version + no-tracking statement
+- [x] 2. Behavior (`public/app.js`)
+  - [x] 2.1 Load feeds + render sidebar with unread counts
+  - [x] 2.2 Render items (feed view + all-unread view, newest-first)
+  - [x] 2.3 Mark-read flow (POST /api/read, then refresh counts)
+  - [x] 2.4 Debounced search via /api/search, restore on clear
+  - [x] 2.5 Add-feed form with inline error handling
+  - [x] 2.6 Refresh-all with new-item/failed-feed summary
+  - [x] 2.7 HTML-escape all feed-supplied text (`esc()`)
+- [x] 3. Styling (`public/styles.css`)
+  - [x] 3.1 Graveyard theme (dark, bone-white, spectral green accent)
+  - [x] 3.2 Serif display headings, system sans body
+  - [x] 3.3 Read items dimmed; responsive single-column under 720px
+- [ ] 4. Manual verification (dev server)
+  - [ ] 4.1 Load page, confirm seed feeds render with counts
+  - [ ] 4.2 Add a feed, mark items read, search, refresh — verify each
+  - [ ] 4.3 Confirm an invalid feed URL shows an inline error
+- [ ] 5. Follow-up (not blocking the scaffold)
+  - [ ] 5.1 Keyboard shortcuts (j/k to move, x to mark read)
+  - [ ] 5.2 Per-feed "last refreshed" time in the sidebar
+  - [ ] 5.3 Headless DOM smoke test for the UI

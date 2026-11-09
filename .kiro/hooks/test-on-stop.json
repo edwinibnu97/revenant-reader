@@ -1,0 +1,1 @@
+{"hooks":[{"action":{"command":"npm test","type":"command"},"description":"Run the full test suite when the agent finishes a session, so regressions surface before the next session starts.","name":"Test on session stop","timeout":120,"trigger":"Stop"}","version":"v1"}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revenant Reader — RSS, back from the dead</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">☠</span>
+      <div>
+        <h1>Revenant Reader</h1>
+        <p class="tagline">RSS, back from the dead — your feeds, local-first, agent-readable.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <input id="search" type="search" placeholder="Search all feeds…" autocomplete="off">
+      <button id="refresh" type="button">↻ Refresh all</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Feeds</h2>
+      <ul id="feed-list" class="feed-list"></ul>
+      <form id="add-feed" class="add-feed">
+        <label for="feed-url">Add a feed</label>
+        <input id="feed-url" type="url" placeholder="https://example.com/rss.xml" required>
+        <button type="submit">Raise feed</button>
+        <p id="add-error" class="error" role="alert"></p>
+      </form>
+      <p class="hint">Feeds live in <code>data/feeds.json</code> on your machine. Nothing leaves it except the fetches you trigger.</p>
+    </aside>
+
+    <section class="reader">
+      <div class="reader-head">
+        <h2 id="feed-title">All unread</h2>
+        <span id="feed-meta" class="meta"></span>
+      </div>
+      <p id="status" class="status" role="status"></p>
+      <ul id="item-list" class="item-list"></ul>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Revenant Reader 0.1.0 — built spec-first with Kiro for Kiroween 2026 (Resurrection). No tracking, no account, no cloud.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

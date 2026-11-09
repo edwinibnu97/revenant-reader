@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Gazette</title>
+    <link>https://example.com/</link>
+    <description>A fixture feed for tests.</description>
+    <item>
+      <title>First post &amp; friends</title>
+      <link>https://example.com/1</link>
+      <guid>guid-1</guid>
+      <description><![CDATA[<p>Hello <b>world</b></p>]]></description>
+      <pubDate>Mon, 03 Nov 2026 10:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Second post</title>
+      <link>https://example.com/2</link>
+      <guid>guid-2</guid>
+      <description>Plain description.</description>
+      <pubDate>Tue, 04 Nov 2026 10:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
