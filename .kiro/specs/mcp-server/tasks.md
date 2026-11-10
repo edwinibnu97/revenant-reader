@@ -16,7 +16,14 @@
   - [x] 3.2 `.kiro/agents/revenant-librarian.json` custom agent with the server + steering resources
 - [x] 4. Tests
   - [x] 4.1 `tests/mcp.test.js` — spawn server, initialize, tools/list exact names, unread_count/list_feeds shapes
-  - [ ] 4.2 Manual: connect the server in Kiro (needs user login) and call `search_items` from a Kiro chat
-- [ ] 5. Follow-up (not blocking the scaffold)
-  - [ ] 5.1 `resources/list` + `resources/read` so clients can read a feed as an MCP resource
-  - [ ] 5.2 `prompts/list` with a "morning briefing" prompt template (top unread items as a digest)
+  - [x] 4.2 Manual: connect the server in Kiro (needs user login) and call `search_items` from a Kiro chat
+    (verified 10 Nov 2026: `kiro-cli chat` with the revenant-librarian agent
+    called `list_feeds` / `add_feed` through this MCP server successfully)
+- [x] 5. Follow-up (not blocking the scaffold)
+  - [x] 5.1 `resources/list` + `resources/read` so clients can read a feed as an MCP resource
+  - [x] 5.2 `prompts/list` with a "morning briefing" prompt template (top unread items as a digest)
+- [x] 6. Reader v0.2.0 tools (10 Nov 2026)
+  - [x] 6.1 `remove_feed` tool (removes by id, reports remaining count)
+  - [x] 6.2 `mark_all_read` tool
+  - [x] 6.3 `export_opml` + `import_opml` tools
+  - [x] 6.4 Tests for all of the above in `tests/mcp.test.js`

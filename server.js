@@ -6,12 +6,16 @@
  * Zero frameworks: plain node:http. Storage: data/feeds.json (lib/store.js).
  *
  * API:
- *   GET  /api/feeds              -> [{ id, url, title, link, unread, total, lastFetched }]
- *   POST /api/feeds { url }      -> fetch + parse + add feed
- *   POST /api/refresh            -> re-fetch every feed, merge new items
- *   GET  /api/feeds/:id/items    -> items of one feed (newest first)
- *   POST /api/read { feedId, itemId } -> mark one item read
- *   GET  /api/search?q=...       -> items matching q in title/description
+ *   GET    /api/feeds              -> [{ id, url, title, link, unread, total, lastFetched, lastError }]
+ *   POST   /api/feeds { url }      -> fetch + parse + add feed
+ *   DELETE /api/feeds/:id          -> remove a feed; { ok: true, removed: id } or 404
+ *   POST   /api/feeds/:id/read-all -> mark all items of a feed read
+ *   POST   /api/refresh            -> re-fetch every feed, merge new items
+ *   GET    /api/feeds/:id/items    -> items of one feed (newest first)
+ *   POST   /api/read { feedId, itemId } -> mark one item read
+ *   GET    /api/search?q=...       -> items matching q in title/description
+ *   GET    /api/opml               -> download subscriptions as OPML 2.0
+ *   POST   /api/opml { opml }      -> import feeds from an OPML document
  *
  * Run:  node server.js        (http://127.0.0.1:3000, or $PORT)
  */
@@ -21,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { parseFeed } = require('./lib/rss');
+const { buildOpml, parseOpml } = require('./lib/opml');
 const store = require('./lib/store');
 
 const PORT = Number(process.env.PORT || 3000);
@@ -73,14 +78,30 @@ function readBody(req) {
   });
 }
 
-async function fetchFeed(url) {
+/**
+ * Fetch + parse a feed. `conditional` may carry { etag, lastModified } from a
+ * previous fetch; when the server answers 304 the feed is unchanged and this
+ * returns null instead of a parsed feed.
+ * Returns { parsed, etag, lastModified } on success.
+ */
+async function fetchFeed(url, conditional) {
+  const headers = { 'User-Agent': 'RevenantReader/0.2 (+https://github.com/)', Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*' };
+  if (conditional) {
+    if (conditional.etag) headers['If-None-Match'] = conditional.etag;
+    if (conditional.lastModified) headers['If-Modified-Since'] = conditional.lastModified;
+  }
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'RevenantReader/0.1 (+https://github.com/)', Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*' },
+    headers,
     signal: AbortSignal.timeout(15000),
   });
+  if (res.status === 304) return null;
   if (!res.ok) throw new Error(`Feed fetch failed: HTTP ${res.status}`);
   const xml = await res.text();
-  return parseFeed(xml);
+  return {
+    parsed: parseFeed(xml),
+    etag: res.headers.get('etag'),
+    lastModified: res.headers.get('last-modified'),
+  };
 }
 
 function publicFeed(feed) {
@@ -92,6 +113,7 @@ function publicFeed(feed) {
     unread: store.unreadCount(feed),
     total: feed.items.length,
     lastFetched: feed.lastFetched,
+    lastError: feed.lastError || null,
   };
 }
 
@@ -114,7 +136,8 @@ async function handleApi(req, res, pathname) {
       return sendJson(res, 409, { error: 'Feed already added' });
     }
     try {
-      const parsed = await fetchFeed(url);
+      const fetched = await fetchFeed(url);
+      const parsed = fetched.parsed;
       const feed = {
         id: store.nextId(state),
         url,
@@ -122,6 +145,9 @@ async function handleApi(req, res, pathname) {
         link: parsed.link,
         description: parsed.description,
         lastFetched: new Date().toISOString(),
+        lastError: null,
+        etag: fetched.etag,
+        lastModified: fetched.lastModified,
         items: [],
       };
       store.mergeItems(feed, parsed.items);
@@ -133,23 +159,108 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  // DELETE /api/feeds/:id
+  const deleteFeedMatch = pathname.match(/^\/api\/feeds\/([^/]+)$/);
+  if (req.method === 'DELETE' && deleteFeedMatch) {
+    const id = decodeURIComponent(deleteFeedMatch[1]);
+    const idx = state.feeds.findIndex((f) => f.id === id);
+    if (idx === -1) return sendJson(res, 404, { error: 'Feed not found' });
+    state.feeds.splice(idx, 1);
+    store.save(state);
+    return sendJson(res, 200, { ok: true, removed: id });
+  }
+
   // POST /api/refresh
   if (req.method === 'POST' && pathname === '/api/refresh') {
     const results = [];
     for (const feed of state.feeds) {
       try {
-        const parsed = await fetchFeed(feed.url);
-        feed.title = parsed.title || feed.title;
-        feed.link = parsed.link || feed.link;
-        const added = store.mergeItems(feed, parsed.items);
+        const fetched = await fetchFeed(feed.url, feed);
         feed.lastFetched = new Date().toISOString();
+        if (!fetched) {
+          // 304 Not Modified: nothing new, but the feed is alive.
+          feed.lastError = null;
+          results.push({ id: feed.id, ok: true, added: 0, notModified: true });
+          continue;
+        }
+        feed.title = fetched.parsed.title || feed.title;
+        feed.link = fetched.parsed.link || feed.link;
+        const added = store.mergeItems(feed, fetched.parsed.items);
+        feed.etag = fetched.etag;
+        feed.lastModified = fetched.lastModified;
+        feed.lastError = null;
         results.push({ id: feed.id, ok: true, added });
       } catch (err) {
+        feed.lastError = err.message;
         results.push({ id: feed.id, ok: false, error: err.message });
       }
     }
     store.save(state);
     return sendJson(res, 200, { results });
+  }
+
+  // POST /api/feeds/:id/read-all
+  const readAllMatch = pathname.match(/^\/api\/feeds\/([^/]+)\/read-all$/);
+  if (req.method === 'POST' && readAllMatch) {
+    const feed = state.feeds.find((f) => f.id === decodeURIComponent(readAllMatch[1]));
+    if (!feed) return sendJson(res, 404, { error: 'Feed not found' });
+    for (const item of feed.items) item.read = true;
+    store.save(state);
+    return sendJson(res, 200, { ok: true, unread: 0, total: feed.items.length });
+  }
+
+  // GET /api/opml — download subscriptions as an OPML 2.0 file
+  if (req.method === 'GET' && pathname === '/api/opml') {
+    const opml = buildOpml(state);
+    res.writeHead(200, {
+      'Content-Type': 'text/x-opml; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="revenant-reader.opml"',
+    });
+    res.end(opml);
+    return;
+  }
+
+  // POST /api/opml { opml } — import feeds from an OPML document
+  if (req.method === 'POST' && pathname === '/api/opml') {
+    const body = await readBody(req);
+    const xml = typeof body.opml === 'string' ? body.opml : '';
+    let outlines;
+    try {
+      outlines = parseOpml(xml);
+    } catch (err) {
+      return sendJson(res, 400, { error: `Could not parse OPML: ${err.message}` });
+    }
+    const added = [];
+    const skipped = [];
+    const failed = [];
+    for (const outline of outlines) {
+      if (state.feeds.some((f) => f.url === outline.url)) {
+        skipped.push({ url: outline.url, reason: 'already added' });
+        continue;
+      }
+      try {
+        const fetched = await fetchFeed(outline.url);
+        const feed = {
+          id: store.nextId(state),
+          url: outline.url,
+          title: fetched.parsed.title || outline.title,
+          link: fetched.parsed.link,
+          description: fetched.parsed.description,
+          lastFetched: new Date().toISOString(),
+          lastError: null,
+          etag: fetched.etag,
+          lastModified: fetched.lastModified,
+          items: [],
+        };
+        store.mergeItems(feed, fetched.parsed.items);
+        state.feeds.push(feed);
+        added.push({ id: feed.id, url: feed.url, title: feed.title, items: feed.items.length });
+      } catch (err) {
+        failed.push({ url: outline.url, error: err.message });
+      }
+    }
+    store.save(state);
+    return sendJson(res, 200, { added, skipped, failed });
   }
 
   // GET /api/feeds/:id/items

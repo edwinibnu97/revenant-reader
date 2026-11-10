@@ -9,12 +9,21 @@ RSS, the technology Google Reader took to the grave in 2013, for the agent era.
 ## What it does
 
 - Add any RSS 2.0 / Atom feed by URL; refresh all feeds with one click.
+  Remove feeds from the sidebar (×) or via the API / MCP.
 - Unread counts, newest-first reading, full-text search across feeds.
+- Unread-only / all-items filter per feed, mark-all-read, and keyboard
+  shortcuts (j/k to move, x to mark read, Enter to open).
+- **OPML import/export** — move subscriptions in and out with any reader.
 - Mark items read — state persists immediately to `data/feeds.json`.
-- **MCP server** (`mcp-server/index.js`) with five tools — `list_feeds`,
-  `search_items`, `mark_read`, `add_feed`, `unread_count` — sharing the exact
-  same store as the web UI. What the agent does shows up in the browser, and
-  vice versa.
+- Per-feed "last refreshed" time and refresh errors shown in the sidebar;
+  conditional fetches (`etag` / `Last-Modified`) skip unchanged feeds, and
+  stored descriptions are capped so one verbose feed can't bloat the file.
+- **MCP server** (`mcp-server/index.js`) with nine tools — `list_feeds`,
+  `search_items`, `mark_read`, `mark_all_read`, `add_feed`, `remove_feed`,
+  `unread_count`, `export_opml`, `import_opml` — plus feed resources
+  (`revenant://feed/<id>`) and a `morning-briefing` prompt, all sharing the
+  exact same store as the web UI. What the agent does shows up in the
+  browser, and vice versa.
 - Zero frameworks, one dependency (`fast-xml-parser`), no build step, no
   tracking, no account, no cloud.
 
@@ -69,10 +78,12 @@ in `.gitignore`.
 
 ## Roadmap (from the specs)
 
-- Per-feed `lastError` shown in the UI when a refresh fails.
-- `etag` / `Last-Modified` support to skip unchanged feeds.
-- MCP `resources/list` + `resources/read`, and a "morning briefing" prompt.
-- Keyboard shortcuts (j/k to move, x to mark read).
+- [x] Per-feed `lastError` shown in the UI when a refresh fails.
+- [x] `etag` / `Last-Modified` support to skip unchanged feeds.
+- [x] MCP `resources/list` + `resources/read`, and a "morning briefing" prompt.
+- [x] Keyboard shortcuts (j/k to move, x to mark read).
+- [ ] Headless DOM smoke test for the UI.
+- [ ] Live deployment URL for the Devpost submission.
 
 ## License
 

@@ -23,7 +23,17 @@
   - [x] 5.3 Live smoke test: add a real feed and refresh against the dev server
     (done 9 Nov 2026: HN 30 items + NASA 10 items fetched live; also fixed hex
     entity decoding `&#x27;` → `'` found during the smoke test)
-- [ ] 6. Hardening (follow-up, not blocking the scaffold)
-  - [ ] 6.1 Per-feed `lastError` persisted and shown in the UI when a refresh fails
-  - [ ] 6.2 Respect `etag` / `Last-Modified` to avoid re-downloading unchanged feeds
-  - [ ] 6.3 Sanitize description length (cap at ~2,000 chars) to bound store size
+- [x] 6. Hardening (follow-up, not blocking the scaffold)
+  - [x] 6.1 Per-feed `lastError` persisted and shown in the UI when a refresh fails
+  - [x] 6.2 Respect `etag` / `Last-Modified` to avoid re-downloading unchanged feeds
+  - [x] 6.3 Sanitize description length (cap at ~2,000 chars) to bound store size
+  (all done in v0.2.0, 10 Nov 2026: `lastError`/`etag`/`lastModified` stored
+  per feed; 304 responses skip re-download; `mergeItems()` caps descriptions)
+- [x] 7. Remove a feed (v0.2.0)
+  - [x] 7.1 `DELETE /api/feeds/:id` (404 for unknown ids; covered by tests)
+  - [x] 7.2 `DATA_DIR` env override in `lib/store.js` so tests use isolated data
+- [x] 8. OPML import/export (v0.2.0)
+  - [x] 8.1 `lib/opml.js` — `buildOpml()` / `parseOpml()` (nested outlines flattened)
+  - [x] 8.2 `GET /api/opml` (download) + `POST /api/opml` (import; per-feed
+    results, duplicates skipped, one bad feed never blocks the rest)
+  - [x] 8.3 Tests: `tests/opml.test.js` (round-trip, rejection, HTTP flow)

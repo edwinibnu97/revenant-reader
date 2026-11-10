@@ -102,6 +102,39 @@ button:hover { border-color: var(--accent-dim); }
   font-size: 0.8rem;
 }
 
+.feed-list li { display: block; }
+.feed-row { display: flex; align-items: center; }
+.feed-row button[data-feed] { flex: 1; }
+.feed-meta { font-size: 0.72rem; color: var(--ink-dim); padding: 0.1rem 0.2rem 0.35rem; }
+.feed-error { color: var(--danger); }
+.delete-feed {
+  flex: none;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--ink-dim);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.feed-row:hover .delete-feed,
+.delete-feed:focus { opacity: 1; }
+.delete-feed:hover { color: var(--danger); border-color: var(--danger); }
+
+.reader-tools { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0.4rem 0 0.6rem; }
+.filter-toggle { display: flex; }
+.filter-toggle button { border-radius: 0; }
+.filter-toggle button:first-child { border-radius: 6px 0 0 6px; }
+.filter-toggle button:last-child { border-radius: 0 6px 6px 0; }
+.filter-toggle button.active { background: var(--accent-dim); border-color: var(--accent-dim); color: #fff; }
+.keys-hint { font-size: 0.75rem; color: var(--ink-dim); }
+.item.selected { outline: 1px solid var(--accent-dim); outline-offset: -1px; }
+
+.opml { display: flex; gap: 0.8rem; align-items: center; font-size: 0.85rem; margin-top: 0.4rem; }
+.opml a { color: var(--accent); }
+.opml-import { cursor: pointer; color: var(--accent); text-decoration: underline; }
+
 .add-feed { display: grid; gap: 0.4rem; margin-bottom: 1rem; }
 .add-feed label { font-size: 0.85rem; color: var(--ink-dim); }
 .add-feed button { background: var(--accent-dim); border-color: var(--accent-dim); color: #fff; }
