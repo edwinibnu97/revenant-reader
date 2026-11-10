@@ -17,7 +17,7 @@
  *   GET    /api/opml               -> download subscriptions as OPML 2.0
  *   POST   /api/opml { opml }      -> import feeds from an OPML document
  *
- * Run:  node server.js        (http://127.0.0.1:3000, or $PORT)
+ * Run:  node server.js        (http://0.0.0.0:3000 by default, or $PORT / $HOST)
  */
 
 const http = require('http');
@@ -29,7 +29,7 @@ const { buildOpml, parseOpml } = require('./lib/opml');
 const store = require('./lib/store');
 
 const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const MIME = {
