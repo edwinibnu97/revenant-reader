@@ -33,6 +33,7 @@
 const { parseFeed } = require('../lib/rss');
 const { buildOpml, parseOpml } = require('../lib/opml');
 const store = require('../lib/store');
+const { buildBriefing } = require('../lib/briefing');
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_INFO = { name: 'revenant-reader', version: '0.2.0' };
@@ -323,17 +324,10 @@ function handleMessage(msg) {
         return respondError(-32602, `Unknown prompt: ${params && params.name}`);
       }
       const state = store.load();
-      const unread = [];
-      for (const feed of state.feeds) {
-        for (const item of feed.items) {
-          if (!item.read) unread.push({ ...item, feedTitle: feed.title });
-        }
-      }
-      unread.sort((a, b) => (b.pubDate ? Date.parse(b.pubDate) : 0) - (a.pubDate ? Date.parse(a.pubDate) : 0));
-      const top = unread.slice(0, 10);
-      const lines = top.map((it) => `- ${it.title} (${it.feedTitle}) — ${it.link}`);
-      const text = top.length
-        ? `Morning briefing — ${unread.length} unread across ${state.feeds.length} feeds. Newest first:\n${lines.join('\n')}`
+      const briefing = buildBriefing(state, 10);
+      const lines = briefing.items.map((it) => `- ${it.title} (${it.feedTitle}) — ${it.link}`);
+      const text = briefing.items.length
+        ? `Morning briefing — ${briefing.totalUnread} unread across ${briefing.feedCount} feeds. Newest first:\n${lines.join('\n')}`
         : 'Morning briefing — inbox zero. No unread items.';
       return respond({
         description: 'A digest of the newest unread items across all feeds.',

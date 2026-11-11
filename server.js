@@ -17,6 +17,7 @@
  *   GET    /api/search?q=...       -> items matching q in title/description
  *   GET    /api/opml               -> download subscriptions as OPML 2.0
  *   POST   /api/opml { opml }      -> import feeds from an OPML document
+ *   GET    /api/briefing           -> morning briefing: newest unread items across all feeds
  *
  * Run:  node server.js        (http://0.0.0.0:3000 by default, or $PORT / $HOST)
  */
@@ -28,6 +29,7 @@ const path = require('path');
 const { parseFeed } = require('./lib/rss');
 const { buildOpml, parseOpml } = require('./lib/opml');
 const store = require('./lib/store');
+const { buildBriefing } = require('./lib/briefing');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -289,6 +291,11 @@ async function handleApi(req, res, pathname) {
     return sendJson(res, 200, { ok: true, unread: store.unreadCount(feed) });
   }
 
+  // GET /api/briefing — morning briefing: top unread items across all feeds
+  if (req.method === 'GET' && pathname === '/api/briefing') {
+    return sendJson(res, 200, buildBriefing(state));
+  }
+
   // GET /api/search?q=
   if (req.method === 'GET' && pathname === '/api/search') {
     const q = new URL(req.url, `http://${req.headers.host}`).searchParams.get('q') || '';
@@ -316,7 +323,7 @@ const server = http.createServer(async (req, res) => {
       await handleApi(req, res, pathname);
       return;
     }
-    const file = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+    const file = pathname === '/' ? 'index.html' : pathname === '/briefing' ? 'briefing.html' : pathname.replace(/^\/+/, '');
     const filePath = path.join(PUBLIC_DIR, file);
     if (!filePath.startsWith(PUBLIC_DIR)) {
       res.writeHead(403);

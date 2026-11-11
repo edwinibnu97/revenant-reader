@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morning Briefing — Revenant Reader</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .briefing-header {
+      margin: 0 0 1.5rem;
+    }
+    .briefing-header h2 {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      margin: 0 0 0.25rem;
+    }
+    .briefing-date {
+      color: var(--ink-dim);
+      font-size: 0.9rem;
+    }
+    .briefing-summary {
+      color: var(--ink-dim);
+      font-size: 0.9rem;
+      margin: 0.4rem 0 0;
+    }
+    .briefing-summary strong {
+      color: var(--ink);
+    }
+    .inbox-zero {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      color: var(--ink-dim);
+      margin-top: 1.5rem;
+    }
+    .inbox-zero .skull {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .inbox-zero p {
+      margin: 0.4rem 0 0;
+      font-size: 0.95rem;
+    }
+    .back-link {
+      font-size: 0.9rem;
+      display: inline-block;
+      margin-bottom: 1.25rem;
+    }
+    .briefing-loading {
+      color: var(--ink-dim);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">☠</span>
+      <div>
+        <h1>Revenant Reader</h1>
+        <p class="tagline">RSS, back from the dead — your feeds, local-first, agent-readable.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a href="/" class="back-link" style="color:var(--accent);">← Back to reader</a>
+    </div>
+  </header>
+
+  <main class="layout" style="display: block; max-width: 860px; margin: 0 auto; padding: 1.5rem 1.5rem 2rem;">
+    <a href="/" class="back-link">← Back to reader</a>
+
+    <div class="briefing-header">
+      <h2>☀ Morning Briefing</h2>
+      <p id="briefing-date" class="briefing-date"></p>
+      <p id="briefing-summary" class="briefing-summary"></p>
+    </div>
+
+    <p id="briefing-loading" class="briefing-loading">Loading…</p>
+    <ul id="briefing-list" class="item-list" hidden></ul>
+    <div id="inbox-zero" class="inbox-zero" hidden>
+      <span class="skull" aria-hidden="true">💀</span>
+      <strong>Inbox zero.</strong>
+      <p>No unread items — the dead rest in peace.</p>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p>Revenant Reader 0.2.0 — built spec-first with Kiro for Kiroween 2026 (Resurrection). No tracking, no account, no cloud.</p>
+  </footer>
+
+  <script>
+    'use strict';
+
+    function esc(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
+    }
+
+    (async function init() {
+      // Show today's date in the header.
+      document.getElementById('briefing-date').textContent = new Date().toLocaleDateString(undefined, {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      });
+
+      let briefing;
+      try {
+        const res = await fetch('/api/briefing');
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        briefing = await res.json();
+      } catch (err) {
+        const loading = document.getElementById('briefing-loading');
+        loading.textContent = `Could not load briefing: ${err.message}`;
+        loading.classList.add('error');
+        return;
+      }
+
+      document.getElementById('briefing-loading').hidden = true;
+
+      if (briefing.items.length === 0) {
+        document.getElementById('briefing-summary').textContent =
+          `${briefing.feedCount} feed${briefing.feedCount !== 1 ? 's' : ''} — all caught up.`;
+        document.getElementById('inbox-zero').hidden = false;
+        return;
+      }
+
+      document.getElementById('briefing-summary').innerHTML =
+        `<strong>${briefing.totalUnread}</strong> unread item${briefing.totalUnread !== 1 ? 's' : ''} across `
+        + `<strong>${briefing.feedCount}</strong> feed${briefing.feedCount !== 1 ? 's' : ''} — `
+        + `showing newest ${esc(String(briefing.items.length))}.`;
+
+      const list = document.getElementById('briefing-list');
+      list.hidden = false;
+
+      for (const item of briefing.items) {
+        const li = document.createElement('li');
+        li.className = 'item';
+        const date = item.pubDate ? `<span>${esc(fmtDate(item.pubDate))}</span>` : '';
+        const desc = item.description
+          ? `<p class="item-desc">${esc(item.description.slice(0, 300))}${item.description.length > 300 ? '…' : ''}</p>`
+          : '';
+        li.innerHTML = `
+          <a class="item-title" href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">${esc(item.title)}</a>
+          ${desc}
+          <p class="item-meta">
+            <span>${esc(item.feedTitle)}</span>
+            ${date}
+          </p>`;
+        list.appendChild(li);
+      }
+    }());
+  </script>
+</body>
+</html>
