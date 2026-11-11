@@ -1,0 +1,42 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Test JSON Feed",
+  "home_page_url": "https://example.com/",
+  "description": "A fixture feed for unit tests.",
+  "items": [
+    {
+      "id": "item-1",
+      "title": "Normal item with content_text",
+      "url": "https://example.com/1",
+      "content_text": "Plain text description from content_text.",
+      "date_published": "2026-11-01T10:00:00Z"
+    },
+    {
+      "id": "item-2",
+      "title": "HTML-only description",
+      "url": "https://example.com/2",
+      "content_html": "<p>Description from <strong>content_html</strong> stripped of tags.</p>",
+      "date_published": "2026-11-02T12:00:00Z"
+    },
+    {
+      "id": "item-3",
+      "title": "External URL link",
+      "url": "https://example.com/3",
+      "external_url": "https://external.example.com/article",
+      "content_text": "Uses external_url as the link when url is also present.",
+      "date_published": "2026-11-03T08:00:00Z"
+    },
+    {
+      "id": "item-4",
+      "url": "https://example.com/4",
+      "content_text": "This item has no title field.",
+      "date_published": "2026-11-04T09:00:00Z"
+    },
+    {
+      "id": "item-5",
+      "title": "Undated item",
+      "url": "https://example.com/5",
+      "content_text": "No date_published on this item."
+    }
+  ]
+}

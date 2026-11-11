@@ -1,0 +1,86 @@
+[
+  {
+    "title": "Hacker News",
+    "url": "https://news.ycombinator.com/rss",
+    "description": "Top stories from the Hacker News community — tech, startups, and intellectual curiosity.",
+    "category": "Tech"
+  },
+  {
+    "title": "Ars Technica",
+    "url": "https://feeds.arstechnica.com/arstechnica/index",
+    "description": "In-depth coverage of technology, science, policy, and gaming.",
+    "category": "Tech"
+  },
+  {
+    "title": "The Verge",
+    "url": "https://www.theverge.com/rss/index.xml",
+    "description": "Technology news and media from the intersection of technology, science, art, and culture.",
+    "category": "Tech"
+  },
+  {
+    "title": "IEEE Spectrum",
+    "url": "https://spectrum.ieee.org/feeds/feed.rss",
+    "description": "Engineering and technology news from the world's largest professional technical society.",
+    "category": "Tech"
+  },
+  {
+    "title": "The Hacker News",
+    "url": "https://feeds.feedburner.com/TheHackersNews",
+    "description": "Cybersecurity news, vulnerability reports, and information security analysis.",
+    "category": "Tech"
+  },
+  {
+    "title": "BBC News",
+    "url": "https://feeds.bbci.co.uk/news/rss.xml",
+    "description": "Top stories from the BBC — global news and current affairs.",
+    "category": "News"
+  },
+  {
+    "title": "NPR Top Stories",
+    "url": "https://feeds.npr.org/1001/rss.xml",
+    "description": "Breaking news and top stories from NPR — public radio news for the United States.",
+    "category": "News"
+  },
+  {
+    "title": "NYT Top Stories",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    "description": "The New York Times home page: the day's most important and interesting stories.",
+    "category": "News"
+  },
+  {
+    "title": "NASA",
+    "url": "https://www.nasa.gov/feed/",
+    "description": "The latest news and multimedia from NASA — space exploration, Earth science, and aeronautics.",
+    "category": "Science"
+  },
+  {
+    "title": "NASA Image of the Day",
+    "url": "https://www.nasa.gov/feeds/iotd-feed/",
+    "description": "A new NASA image every day, from deep space to Earth observation.",
+    "category": "Science"
+  },
+  {
+    "title": "Quanta Magazine",
+    "url": "https://www.quantamagazine.org/feed/",
+    "description": "Illuminating basic science and mathematics — physics, biology, and computer science.",
+    "category": "Science"
+  },
+  {
+    "title": "Nature",
+    "url": "https://www.nature.com/nature.rss",
+    "description": "Research articles and news from Nature, one of the world's leading scientific journals.",
+    "category": "Science"
+  },
+  {
+    "title": "Science (AAAS)",
+    "url": "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
+    "description": "Table of contents feed from Science, the journal of the American Association for the Advancement of Science.",
+    "category": "Science"
+  },
+  {
+    "title": "The Daily (NYT Podcast)",
+    "url": "https://feeds.simplecast.com/54nAGcIl",
+    "description": "The New York Times' flagship daily podcast — 20 minutes on the story that matters most.",
+    "category": "Podcasts"
+  }
+]

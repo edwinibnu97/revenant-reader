@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feed Directory — Revenant Reader</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .directory-header {
+      margin: 0 0 1.5rem;
+    }
+    .directory-header h2 {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      margin: 0 0 0.25rem;
+    }
+    .directory-subtitle {
+      color: var(--ink-dim);
+      font-size: 0.9rem;
+      margin: 0.4rem 0 0;
+    }
+    .directory-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .directory-actions a {
+      font-size: 0.9rem;
+    }
+    .category-section {
+      margin-bottom: 2rem;
+    }
+    .category-section h3 {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      margin: 0 0 0.75rem;
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.4rem;
+    }
+    .directory-feed-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.6rem;
+    }
+    .directory-feed {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      background: var(--panel);
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .directory-feed-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .directory-feed-title {
+      font-family: var(--serif);
+      font-size: 1rem;
+      margin: 0 0 0.2rem;
+      color: var(--ink);
+    }
+    .directory-feed-desc {
+      color: var(--ink-dim);
+      font-size: 0.88rem;
+      margin: 0;
+    }
+    .directory-feed-url {
+      font-size: 0.75rem;
+      color: var(--ink-dim);
+      word-break: break-all;
+      margin: 0.25rem 0 0;
+    }
+    .add-btn {
+      flex: none;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      background: var(--accent-dim);
+      border-color: var(--accent-dim);
+      color: #fff;
+    }
+    .add-btn:disabled {
+      background: var(--panel-2);
+      border-color: var(--line);
+      color: var(--ink-dim);
+      cursor: default;
+    }
+    .add-btn.added {
+      background: var(--panel-2);
+      border-color: var(--line);
+      color: var(--ink-dim);
+    }
+    .back-link {
+      font-size: 0.9rem;
+      display: inline-block;
+      margin-bottom: 1.25rem;
+    }
+    .directory-loading {
+      color: var(--ink-dim);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">☠</span>
+      <div>
+        <h1>Revenant Reader</h1>
+        <p class="tagline">RSS, back from the dead — your feeds, local-first, agent-readable.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a href="/" style="font-size:0.9rem; color:var(--accent); white-space:nowrap;">← Back to reader</a>
+    </div>
+  </header>
+
+  <main class="layout" style="display: block; max-width: 900px; margin: 0 auto; padding: 1.5rem 1.5rem 2rem;">
+    <div class="directory-header">
+      <h2>📡 Feed Directory</h2>
+      <p class="directory-subtitle">A curated starter set of quality feeds — one click to add any of them to your reader.</p>
+    </div>
+
+    <div class="directory-actions">
+      <a href="/api/directory/opml" download="revenant-directory.opml">⬇ Download all as OPML</a>
+      <a href="/">← Back to reader</a>
+    </div>
+
+    <p id="dir-loading" class="directory-loading">Loading…</p>
+    <div id="dir-content" hidden></div>
+  </main>
+
+  <footer class="foot">
+    <p>Revenant Reader 0.2.0 — built spec-first with Kiro for Kiroween 2026 (Resurrection). No tracking, no account, no cloud.</p>
+  </footer>
+
+  <script>
+    'use strict';
+
+    function esc(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    (async function init() {
+      let directory, myFeeds;
+      try {
+        const [dirRes, feedsRes] = await Promise.all([
+          fetch('/api/directory'),
+          fetch('/api/feeds'),
+        ]);
+        if (!dirRes.ok) throw new Error(`Directory request failed: ${dirRes.status}`);
+        if (!feedsRes.ok) throw new Error(`Feeds request failed: ${feedsRes.status}`);
+        directory = await dirRes.json();
+        myFeeds = await feedsRes.json();
+      } catch (err) {
+        const loading = document.getElementById('dir-loading');
+        loading.textContent = `Could not load directory: ${err.message}`;
+        loading.classList.add('error');
+        return;
+      }
+
+      document.getElementById('dir-loading').hidden = true;
+
+      // Build a set of already-subscribed URLs for quick lookup.
+      const subscribedUrls = new Set((myFeeds.feeds || []).map((f) => f.url));
+
+      const content = document.getElementById('dir-content');
+      content.hidden = false;
+
+      for (const category of directory.categories) {
+        const section = document.createElement('section');
+        section.className = 'category-section';
+
+        const heading = document.createElement('h3');
+        heading.textContent = category.name;
+        section.appendChild(heading);
+
+        const list = document.createElement('ul');
+        list.className = 'directory-feed-list';
+
+        for (const feed of category.feeds) {
+          const li = document.createElement('li');
+          li.className = 'directory-feed';
+
+          const info = document.createElement('div');
+          info.className = 'directory-feed-info';
+          info.innerHTML = `
+            <p class="directory-feed-title">${esc(feed.title)}</p>
+            <p class="directory-feed-desc">${esc(feed.description)}</p>
+            <p class="directory-feed-url">${esc(feed.url)}</p>`;
+
+          const isAdded = subscribedUrls.has(feed.url);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'add-btn' + (isAdded ? ' added' : '');
+          btn.textContent = isAdded ? '✓ Added' : '+ Add';
+          btn.disabled = isAdded;
+          btn.setAttribute('aria-label', isAdded ? `${feed.title} already added` : `Add ${feed.title}`);
+
+          if (!isAdded) {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              btn.textContent = 'Adding…';
+              try {
+                const res = await fetch('/api/feeds', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ url: feed.url }),
+                });
+                const data = await res.json();
+                if (res.status === 201 || res.status === 409) {
+                  btn.textContent = '✓ Added';
+                  btn.classList.add('added');
+                  subscribedUrls.add(feed.url);
+                } else {
+                  btn.disabled = false;
+                  btn.textContent = '+ Add';
+                  btn.title = data.error || 'Failed to add';
+                }
+              } catch (err) {
+                btn.disabled = false;
+                btn.textContent = '+ Add';
+                btn.title = err.message;
+              }
+            });
+          }
+
+          li.appendChild(info);
+          li.appendChild(btn);
+          list.appendChild(li);
+        }
+
+        section.appendChild(list);
+        content.appendChild(section);
+      }
+    }());
+  </script>
+</body>
+</html>

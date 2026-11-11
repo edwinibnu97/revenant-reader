@@ -18,6 +18,8 @@
  *   GET    /api/opml               -> download subscriptions as OPML 2.0
  *   POST   /api/opml { opml }      -> import feeds from an OPML document
  *   GET    /api/briefing           -> morning briefing: newest unread items across all feeds
+ *   GET    /api/directory          -> curated feed directory grouped by category
+ *   GET    /api/directory/opml     -> full directory as OPML 2.0 download
  *
  * Run:  node server.js        (http://0.0.0.0:3000 by default, or $PORT / $HOST)
  */
@@ -34,6 +36,9 @@ const { buildBriefing } = require('./lib/briefing');
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
+
+// Curated feed directory — loaded once at startup.
+const DIRECTORY = require('./directory.json');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -88,7 +93,7 @@ function readBody(req) {
  * Returns { parsed, etag, lastModified } on success.
  */
 async function fetchFeed(url, conditional) {
-  const headers = { 'User-Agent': 'RevenantReader/0.2 (+https://github.com/)', Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*' };
+  const headers = { 'User-Agent': 'RevenantReader/0.2 (+https://github.com/)', Accept: 'application/feed+json, application/json, application/rss+xml, application/atom+xml, application/xml, text/xml, */*' };
   if (conditional) {
     if (conditional.etag) headers['If-None-Match'] = conditional.etag;
     if (conditional.lastModified) headers['If-Modified-Since'] = conditional.lastModified;
@@ -313,6 +318,34 @@ async function handleApi(req, res, pathname) {
     return sendJson(res, 200, { items: hits.slice(0, 100) });
   }
 
+  // GET /api/directory — curated directory grouped by category
+  if (req.method === 'GET' && pathname === '/api/directory') {
+    const categoryMap = new Map();
+    for (const entry of DIRECTORY) {
+      if (!categoryMap.has(entry.category)) categoryMap.set(entry.category, []);
+      categoryMap.get(entry.category).push({ title: entry.title, url: entry.url, description: entry.description });
+    }
+    const categories = [];
+    for (const [name, feeds] of categoryMap) {
+      categories.push({ name, feeds });
+    }
+    return sendJson(res, 200, { categories });
+  }
+
+  // GET /api/directory/opml — download the entire directory as OPML 2.0
+  if (req.method === 'GET' && pathname === '/api/directory/opml') {
+    const directoryState = {
+      feeds: DIRECTORY.map((e) => ({ title: e.title, url: e.url, link: '', description: e.description })),
+    };
+    const opml = buildOpml(directoryState);
+    res.writeHead(200, {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="revenant-directory.opml"',
+    });
+    res.end(opml);
+    return;
+  }
+
   return sendJson(res, 404, { error: 'Unknown API route' });
 }
 
@@ -323,7 +356,7 @@ const server = http.createServer(async (req, res) => {
       await handleApi(req, res, pathname);
       return;
     }
-    const file = pathname === '/' ? 'index.html' : pathname === '/briefing' ? 'briefing.html' : pathname.replace(/^\/+/, '');
+    const file = pathname === '/' ? 'index.html' : pathname === '/briefing' ? 'briefing.html' : pathname === '/directory' ? 'directory.html' : pathname.replace(/^\/+/, '');
     const filePath = path.join(PUBLIC_DIR, file);
     if (!filePath.startsWith(PUBLIC_DIR)) {
       res.writeHead(403);
