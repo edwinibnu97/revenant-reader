@@ -6,6 +6,7 @@
  * Zero frameworks: plain node:http. Storage: data/feeds.json (lib/store.js).
  *
  * API:
+ *   GET    /api/health             -> { status: "ok" }
  *   GET    /api/feeds              -> [{ id, url, title, link, unread, total, lastFetched, lastError }]
  *   POST   /api/feeds { url }      -> fetch + parse + add feed
  *   DELETE /api/feeds/:id          -> remove a feed; { ok: true, removed: id } or 404
@@ -118,6 +119,11 @@ function publicFeed(feed) {
 }
 
 async function handleApi(req, res, pathname) {
+  // GET /api/health
+  if (req.method === 'GET' && pathname === '/api/health') {
+    return sendJson(res, 200, { status: 'ok' });
+  }
+
   const state = store.load();
 
   // GET /api/feeds
